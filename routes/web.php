@@ -17,14 +17,25 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Auth::routes();
 
 Route::middleware('auth')->group(function() {
+
     Route::get('/tweets', 'TweetController@index')->name('home');
     Route::post('/tweets', 'TweetController@store');
+
+    Route::post('/profiles/{user:username}/follow', 'FollowsController@store')->name('follow');
+    Route::get('/profiles/{user:username}/edit', 'ProfilesController@edit');
+
+    Route::patch('/profiles/{user:username}', 'ProfilesController@update');
+
+    Route::get('/explore', 'ExploreController');
+
 });
 
-Route::get('/profiles/{user}', 'ProfilesController@show')->name('profile');
+Route::get('/profiles/{user:username}', 'ProfilesController@show')->name('profile');
+
+
+Auth::routes();
 
 
 

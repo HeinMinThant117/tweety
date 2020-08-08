@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, Followable;
 
     /**
      * The attributes that are mass assignable.
@@ -16,7 +16,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+      'username','name','avatar', 'email', 'password',
     ];
 
     /**
@@ -37,11 +37,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function getAvatarAttribute()
+    public function getAvatarAttribute($value)
     {
-        return "https://i.pravatar.cc/40?u=" . $this->email;
+        return asset('storage/' . ($value ?: 'avatars/default_avatar.png'));
     }
 
+
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = bcrypt($value);
+    }
 
 
     public function timeline()
@@ -49,7 +54,7 @@ class User extends Authenticatable
         $ids = $this->follows->pluck('id');
         $ids->push($this->id);
 
-        return Tweet::whereIn('user_id',$ids)->latest()->get();
+        return Tweet::whereIn('user_id',$ids)->latest()->paginate(20);
     }
 
     public function tweets()
@@ -57,22 +62,13 @@ class User extends Authenticatable
         return $this->hasMany(Tweet::class);
     }
 
-
-    public function follow(User $user)
-
+    public function path($append = '')
     {
-        return $this->follows()->save($user);
+        $path = route('profile', $this->username);
 
+        return $append ? "{$path}/{$append}" : $path;
     }
 
-    public function follows()
-    {
-        return $this->belongsToMany(User::class, 'follows','user_id','following_user_id');
-    }
 
-    public function getRouteKeyName()
-    {
-        return 'name';
-    }
 
 }
